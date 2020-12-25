@@ -1,0 +1,826 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<syntax name="go">
+<meta>
+	<name>Go</name>
+	<type>script</type>
+	<preferred-file-extension>go</preferred-file-extension>
+	<default-extension>go</default-extension>
+</meta>
+
+<detectors>
+	<extension priority="1.0">go</extension>
+</detectors>
+
+<indentation>
+	<increase>
+		<expression>(\{[^}\"']*$)|(\[[^\]\"']*$)|(\([^)\"']*$)</expression>
+	</increase>
+	<decrease>
+		<expression>^\s*(\s*/\*.*\*/\s*)*[\}\]\)\\]</expression>
+	</decrease>
+</indentation>
+
+<comments>
+	<single>
+		<expression>//</expression>
+	</single>
+	<multiline>
+		<starts-with>
+			<expression>/*</expression>
+		</starts-with>
+		<ends-with>
+			<expression>*/</expression>
+		</ends-with>
+	</multiline>
+</comments>
+
+<brackets>
+	<pair open="{" close="}" />
+	<pair open="[" close="]" />
+	<pair open="(" close=")" />
+</brackets>
+
+<autoclosing-pairs>
+	<pair open="{" close="}" skip="string,comment" />
+	<pair open="[" close="]" skip="string,comment" />
+	<pair open="(" close=")" skip="string,comment" />
+	<pair open="&apos;" close="&apos;" skip="string,comment" />
+	<pair open="&quot;" close="&quot;" skip="string" />
+	<pair open="`" close="`" skip="string,comment" />
+</autoclosing-pairs>
+
+<surrounding-pairs>
+	<pair open="{" close="}" />
+	<pair open="[" close="]" />
+	<pair open="(" close=")" />
+	<pair open="&apos;" close="&apos;" />
+	<pair open="&quot;" close="&quot;" />
+	<pair open="`" close="`" />
+</surrounding-pairs>
+
+<symbols>
+	<documentation mode="before" match="comment" match-multiple="go.comment.single" />
+	<documentation mode="after" match="comment" match-multiple="go.comment.single" />
+</symbols>
+
+<scopes>
+	<include syntax="self" collection="comments" />
+	<include syntax="self" collection="blocks" />
+	<include syntax="self" collection="definitions" />
+	<include syntax="self" collection="keywords" />
+	<include syntax="self" collection="values" />
+	<include syntax="self" collection="identifiers" />
+	<include syntax="self" collection="syntax" />
+	<include syntax="self" collection="punctuation" />
+	<include syntax="self" collection="json-punctuation" />
+	<include syntax="self" collection="variables" />
+	<include syntax="self" collection="types"/>
+</scopes>
+
+<collections>
+	<!-- Comments -->
+	<collection name="comments">
+		<!-- Inline documentation style comments -->
+		<scope name="go.comment.multiline.documentation">
+			<symbol type="comment">
+				<context behavior="subtree" />
+			</symbol>
+			<starts-with>
+				<expression>/\*(?!\*/)[*!](?:\*(?!/$)|/(?!$))*</expression>
+				<capture number="0" name="go.punctuation.definition.begin"/>
+			</starts-with>
+			<ends-with>
+				<expression>\*/</expression>
+				<capture number="0" name="go.punctuation.definition.end"/>
+			</ends-with>
+			<subscopes>
+				<scope name="markup.link">
+					<expression>(?i)\b(?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()&lt;>]+|\(([^\s()&lt;>]+|(\([^\s()&lt;>]+\)))*\))+(?:\(([^\s()&lt;>]+|(\([^\s()&lt;>]+\)))*\)|[^\s`!()\[\]{};:'".,&lt;>?«»“”‘’])</expression>
+				</scope>
+				<scope name="keyword">
+					<expression>(?i)(?&lt;=\s|^)@[a-z]+\b</expression>
+				</scope>
+			</subscopes>
+		</scope>
+		<!-- This one is a bit weird; it's technically a line comment, but because it spans multiple lines we need to make the system think of it like a block comment -->
+		<scope name="go.comment.multiline.line-by-line.documentation">
+			<symbol type="comment">
+				<context behavior="subtree" />
+			</symbol>
+			<starts-with>
+				<expression>(\/\/([!/])/*)</expression>
+				<capture number="1" name="go.punctuation.definition.begin"/>
+			</starts-with>
+			<ends-with>
+				<expression>^(?!\s*\/\/\2)</expression>
+			</ends-with>
+		</scope>
+		<scope name="go.comment.single.documentation">
+			<expression>(\/\/[!\/])(.*)$[\n\r]*</expression>
+			<capture number="1" name="go.punctuation.definition.begin"/>
+			<capture number="2" name="go.comment.content" />
+		</scope>
+		<!-- Bookmark comments -->
+		<!-- A common pattern when commenting is to use comment bookmarks that consist of a comment with a number of repeating characters to break up the document, followed by some text as the heading; this tries to captures that use-case scenario in a flexible way. The single exclamation point with a space before it is Coda's bookmark syntax -->
+		<scope name="go.comment.multiline.bookmark">
+			<symbol type="comment">
+				<context behavior="subtree" />
+			</symbol>
+			<starts-with>
+				<expression>/\*\s*([*#=~+-]{3,}(?!/)|!)</expression>
+				<capture number="0" name="go.punctuation.definition.begin"/>
+			</starts-with>
+			<ends-with>
+				<expression>\*/</expression>
+				<capture number="0" name="go.punctuation.definition.end"/>
+			</ends-with>
+		</scope>
+		<!-- Normal comments below: single, multiline -->
+		<scope name="go.comment.single" spell-check="true">
+			<expression>(\/\/)(.*)$</expression>
+			<capture number="1" name="go.punctuation.definition.begin" />
+			<capture number="2" name="go.comment.content" />
+		</scope>
+		<scope name="go.comment.multiline" spell-check="true">
+			<symbol type="comment">
+				<context behavior="subtree" />
+			</symbol>
+			<starts-with>
+				<expression>/\*</expression>
+				<capture number="0" name="go.punctuation.definition.begin" />
+			</starts-with>
+			<ends-with>
+				<expression>\*/</expression>
+				<capture number="0" name="go.punctuation.definition.end" />
+			</ends-with>
+		</scope>
+	</collection>
+	<!-- Blocks -->
+	<collection name="blocks">
+		<scope name="go.block">
+			<symbol type="block">
+				<context behavior="subtree" />
+			</symbol>
+			<starts-with>
+				<expression>\{</expression>
+				<capture number="0" name="go.block.bracket" />
+			</starts-with>
+			<ends-with>
+				<expression>\}</expression>
+				<capture number="0" name="go.block.bracket" />
+			</ends-with>
+			<subscopes>
+				<include syntax="self" />
+			</subscopes>
+		</scope>
+	</collection>
+	
+	<!-- Definitions -->
+	<collection name="definitions">
+		<!-- Functions -->
+		<scope name="go.definition.function">
+			<symbol type="function">
+				<context behavior="subtree" foldable="false" />
+			</symbol>
+			<starts-with>
+				<expression>(func)\s+([A-Za-zÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_]*)</expression>
+				<capture number="1" name="go.keyword" />
+				<capture number="2" name="go.identifier.function.name" />
+			</starts-with>
+			<ends-with>
+				<expression>(?&lt;=\})</expression>
+			</ends-with>
+			<subscopes>
+				<cut-off>
+					<expression>(?=\b(?:func|if|else|while|for|range)\b)</expression>
+				</cut-off>
+				<include syntax="self" collection="comments" />
+				<include syntax="self" collection="arguments" />
+				<include syntax="self" collection="return-arguments" />
+				<include syntax="self" collection="function-blocks" />
+			</subscopes>
+		</scope>
+
+		<!-- type -->
+		<scope name="go.definition.type">
+			<expression>\b(type)\s+([a-zA-ZÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_]*)</expression>
+			<capture number="1" name="go.keyword.type" />
+			<capture number="2" name="go.identifier.type.name" />
+		</scope>
+
+		<!-- Methods: in Go, these are connected to structs, not classes, since Go does not have classes -->
+		<scope name="go.definition.function.method">
+			<symbol type="function">
+				<context behavior="subtree" foldable="false" />
+			</symbol>
+			<starts-with>
+				<expression>(func)\s+(\()([A-Za-zÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_]*)\s+(\*?[A-Za-zÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_]*)\s*(\))\s+([A-Za-zÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_]*)</expression>
+				<capture number="1" name="go.keyword" />
+				<capture number="2" name="go.bracket" />
+				<capture number="3" name="go.identifier.method.variable" />
+				<capture number="4" name="go.identifier.method.struct" />
+				<capture number="5" name="go.bracket" />
+				<capture number="6" name="go.identifier.method.name" />
+			</starts-with>
+			<ends-with>
+				<expression>(?&lt;=\})</expression>
+			</ends-with>
+			<subscopes>
+				<cut-off>
+					<expression>(?=\b(?:func|if|else|while|for|range)\b)</expression>
+				</cut-off>
+				<include syntax="self" collection="comments" />
+				<include syntax="self" collection="arguments" />
+				<include syntax="self" collection="return-arguments" />
+				<include syntax="self" collection="function-blocks" />
+			</subscopes>
+		</scope>
+		<!-- Anonymous Functions -->
+		<scope name="go.definition.function.anonymous">
+			<symbol type="function" anonymous="true">
+				<context behavior="subtree" foldable="false" />
+			</symbol>
+			<starts-with>
+				<expression>(func)(?=\s*\()</expression>
+				<capture number="1" name="go.keyword" />
+			</starts-with>
+			<ends-with>
+				<expression>(?&lt;=\})</expression>
+			</ends-with>
+			<subscopes>
+				<cut-off>
+					<expression>(?=\b(?:func|if|else|while|for|range)\b)</expression>
+				</cut-off>
+				<include syntax="self" collection="comments" />
+				<include syntax="self" collection="arguments" />
+				<include syntax="self" collection="return-arguments" />
+				<include syntax="self" collection="function-blocks" />
+			</subscopes>
+		</scope>
+
+		<scope name="go.definition.variable">
+			<symbol type="variable" scope="local" />
+			<expression>(?&lt;!\.)([A-Za-zÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_]*)\s*(\=)</expression>
+			<capture number="1" name="go.identifier.name" />
+			<capture number="2" name="go.operator" />
+		</scope>
+	</collection>
+
+	<!-- Arguments -->
+	<collection name="arguments">
+		<scope name="go.arguments">
+			<include syntax="self" collection="comments" />
+			<starts-with>
+				<expression>\(</expression>
+				<capture number="0" name="go.bracket" />
+			</starts-with>
+			<ends-with>
+				<expression>\)</expression>
+				<capture number="0" name="go.bracket" />
+			</ends-with>
+			<subscopes>
+				<cut-off>
+					<expression>(?=\b(?:func|if|else|while|for)\b)</expression>
+				</cut-off>
+				<include syntax="self" collection="comments" />
+				<scope name="go.separator">
+					<expression>,</expression>
+				</scope>
+				<scope name="go.identifier.argument.rest">
+					<symbol type="argument" />
+					<expression>(\.\.\.)\b([A-Za-zÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_]*)\b</expression>
+					<capture number="1" name="go.operator" />
+					<capture number="2" name="go.identifier.argument.rest.types" />
+				</scope>
+				<scope name="go.identifier.argument">
+					<symbol type="argument" />
+					<expression>(?&lt;!\=)\b([A-Za-zÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_]*)\s+(\*?)([A-Za-zÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_]*)\b</expression>
+					<capture number="1" name="go.identifier.argument.name" />
+					<capture number="2" name="go.operator" />
+					<capture number="3" name="go.identifier.argument.types" />
+				</scope>
+				<!-- <include syntax="self" collection="values" /> Probably not allowed in Go -->
+				<include syntax="self" collection="syntax" />
+			</subscopes>
+		</scope>
+	</collection>
+
+	<!-- Return arguments. Go is strongly typed and can return multiple arguments. This is a quick & dirty fix which is not syntactically correct, but should suffice for a first attempt (gwyneth 20200810) -->
+	<collection name="return-arguments">
+		<scope name="go.arguments.return.single">
+			<symbol type="argument" />
+			<expression>[!\(]\b(\*?)()[A-Za-zÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_]*)\b[!\(]</expression>
+			<capture number="1" name="go.operator" />
+			<capture number="2" name="types" />
+		</scope>
+		<scope name="go.arguments.return.multiple">
+			<starts-with>
+				<expression>\(</expression>
+				<capture number="0" name="go.bracket" />
+			</starts-with>
+			<ends-with>
+				<expression>\)</expression>
+				<capture number="0" name="go.bracket" />
+			</ends-with>
+			<subscopes>
+				<cut-off>
+					<expression>(?=\b(?:func|if|else|while|for)\b)</expression>
+				</cut-off>
+				<include syntax="self" collection="comments" />
+				<scope name="go.separator">
+					<expression>,</expression>
+				</scope>
+				<scope name="go.identifier.argument.return.name">
+					<symbol type="types" />
+					<expression>(?&lt;!\=)\b(\*?)([A-Za-zÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_]*)\b</expression>
+					<capture number="1" name="go.operator" />
+					<capture number="2" name="types" />
+				</scope>
+				<include syntax="self" collection="values" />
+				<include syntax="self" collection="syntax" />
+			</subscopes>
+		</scope>
+	</collection>
+
+	<!-- Function Blocks -->
+	<collection name="function-blocks">
+		<scope name="go.block">
+			<symbol type="block">
+				<context behavior="subtree" fold-type="function" />
+			</symbol>
+			<starts-with>
+				<expression>\{</expression>
+				<capture number="0" name="go.bracket" />
+			</starts-with>
+			<ends-with>
+				<expression>\}</expression>
+				<capture number="0" name="go.bracket" />
+			</ends-with>
+			<subscopes>
+				<include syntax="self" />
+			</subscopes>
+		</scope>
+	</collection>
+
+	<!-- Keywords -->
+	<collection name="keywords">
+		<scope name="go.keyword">
+			<symbol type="keyword" />
+			<strings>
+				<string>break</string>
+				<string>case</string>
+				<string>chan</string>
+				<string>const</string>
+				<string>continue</string>
+				<string>default</string>
+				<string>defer</string>
+				<string>else</string>
+				<string>fallthrough</string>
+				<string>for</string>
+				<string>func</string>
+				<string>go</string>
+				<string>goto</string>
+				<string>if</string>
+				<string>interface</string>
+				<string>map</string>
+				<string>range</string>
+				<string>return</string>
+				<string>select</string>
+				<string>struct</string>
+				<string>switch</string>
+				<string>type</string>
+				<string>var</string>
+			</strings>
+		</scope>
+		
+	</collection>
+
+	<!-- Values -->
+	<collection name="values">
+		<include syntax="self" collection="strings" />
+		<scope name="go.value.null">
+			<strings>
+				<string>nil</string>
+			</strings>
+		</scope>
+		<scope name="go.value.boolean">
+			<strings>
+				<string>true</string>
+				<string>false</string>
+			</strings>
+		</scope>
+		<scope name="go.value.iota">
+			<strings>
+				<string>iota</string>
+			</strings>
+		</scope>
+		<scope name="go.value.number.hex">
+			<expression>\b0(x|X)[a-fA-F0-9]+\b</expression>
+		</scope>
+		<scope name="go.value.number.octal">
+			<expression>\b0[0-7]+\b</expression>
+		</scope>
+		<scope name="go.value.number.complex">
+			<expression>\b\-?(?:\d+(?:\.\d*)?|(?:\.\d+))\b*\+\b*\-?(?:\d+(?:\.\d*)?|(?:\.\d+))i\b</expression>
+		</scope>
+		<scope name="go.value.number.float">
+			<!--Equivalent: .0001, 0.0001, 1e-4, 1.0e-4-->
+			<expression>\b((([0-9]+)?\.[0-9]+([eE]-?[0-9]+)?)|([0-9]+[eE]-?[0-9]+))\b</expression>
+		</scope>
+		<scope name="go.value.number.integer">
+			<expression>\b-?[0-9]+\b</expression>
+		</scope>
+		<scope name="go.value.number">
+			<expression>\b\-?(?:\d+(?:\.\d*)?|(?:\.\d+))\b</expression>
+		</scope>
+	</collection>
+
+	<!-- Strings -->
+	<collection name="strings">
+		<scope name="go.string.backtick-quoted">
+			<starts-with>
+				<expression>`</expression>
+				<capture number="0" name="go.string.backtick-quoted.delimiter" />
+			</starts-with>
+			<ends-with>
+				<expression>`</expression>
+				<capture number="0" name="go.string.backtick-quoted.delimiter" />
+			</ends-with>
+			<subscopes>
+				<scope name="go.string.backtick-quoted.escape">
+					<expression>\\(?:&apos;|&quot;|n|r|t|b|f)</expression>
+				</scope>
+				<scope name="go.string-template">
+					<starts-with>
+						<expression>\$\{</expression>
+					</starts-with>
+					<ends-with>
+						<expression>\}|(?=`)|(?:(?&lt;!\\)$)</expression>
+					</ends-with>
+				</scope>
+			</subscopes>
+		</scope>
+		<scope name="go.string.double-quoted">
+			<starts-with>
+				<expression>&quot;</expression>
+				<capture number="0" name="go.string.double-quoted.delimiter" />
+			</starts-with>
+			<ends-with>
+				<expression>&quot;|(?:(?&lt;!\\)$)</expression>
+				<capture number="0" name="go.string.double-quoted.delimiter" />
+			</ends-with>
+			<subscopes>
+				<scope name="go.string.double-quoted.escape">
+					<expression>\\(?:\\|&quot;|n|r|t|b|f)</expression>
+				</scope>
+			</subscopes>
+		</scope>
+		<scope name="go.string.single-quoted">
+			<starts-with>
+				<expression>&apos;</expression>
+				<capture number="0" name="go.string.single-quoted.delimiter" />
+			</starts-with>
+			<ends-with>
+				<expression>&apos;|(?:(?&lt;!\\)$)</expression>
+				<capture number="0" name="go.string.single-quoted.delimiter" />
+			</ends-with>
+			<subscopes>
+				<scope name="go.string.single-quoted.escape">
+					<expression>\\(?:\\|&apos;|n|r|t|b|f)</expression>
+				</scope>
+			</subscopes>
+		</scope>
+		<scope name="go.string.regex">
+			<symbol type="regex" />
+			<starts-with>
+				<expression>(?i)(?&lt;=[=(,:\+~!?\[|]|return|;|=&gt;)\s*/(?![/*+{}?\r\n])</expression>
+			</starts-with>
+			<ends-with>
+				<expression>/([cgimosuxy]+\b)?</expression>
+			</ends-with>
+			<subscopes>
+				<scope name="go.string.regex.escape">
+					<expression>\\(?:/)</expression>
+				</scope>
+			</subscopes>
+		</scope>
+	</collection>
+	<!-- Types -->
+	<collection name="types">
+		<scope name="go.identifier.type.core" spell-check="false" lookup="index">
+			<expression>(\b\s+([A-Za-zÀ-ÖØ-öø-ÿ0-9_\[\]]*))</expression>
+				<strings word-boundary="false">
+					<string>bool</string>
+					<string>byte</string>
+					<string>complex64</string>
+					<string>complex128</string>
+					<string>float32</string>
+					<string>float64</string>
+					<string>int</string>
+					<string>int8</string>
+					<string>int16</string>
+					<string>int32</string>
+					<string>int64</string>
+					<string>rune</string>
+					<string>string</string>
+					<string>uint</string>
+					<string>uint8</string>
+					<string>uint16</string>
+					<string>uint32</string>
+					<string>uint64</string>
+					<string>uintptr</string>
+				</strings>
+		</scope>
+	</collection>
+	<!-- Identifiers -->
+	<collection name="identifiers">
+		<!-- Package -->
+		<scope name="go.identifier.global.package">
+			<expression>\b(package)\s+([a-zA-ZÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_]*)</expression>
+						<capture number="1" name="go.string-template.package" />
+						<capture number="2" name="go.identifier" />
+		</scope>
+		<!-- Import -->
+		<scope name="go.string-template.import">
+			<expression>import</expression>
+		</scope>
+		<scope name="go.identifier.core.function">
+			<strings prefix="(?&lt;!\.)" suffix="(?=\()">
+				<string>append</string>
+				<string>cap</string>
+				<string>close</string>
+				<string>complex</string>
+				<string>copy</string>
+				<string>delete</string>
+				<string>imag</string>
+				<string>len</string>
+				<string>make</string>
+				<string>new</string>
+				<string>panic</string>
+				<string>print</string>
+				<string>println</string>
+				<string>real</string>
+				<string>recover</string>
+				<string>Alignof</string>
+				<string>Offsetof</string>
+				<string>Sizeof</string>
+			</strings>
+		</scope>
+		<scope name="go.identifier.blank">
+			<strings>
+				<string>_</string>
+			</strings>
+		</scope>
+		<scope name="go.identifier.standard-packages">
+			<strings prefix="&quot;" suffix="&quot;">
+				<string>adler32</string>
+				<string>aes</string>
+				<string>ascii85</string>
+				<string>asn1</string>
+				<string>ast</string>
+				<string>base64</string>
+				<string>big</string>
+				<string>bignum</string>
+				<string>binary</string>
+				<string>block</string>
+				<string>bufio</string>
+				<string>bytes</string>
+				<string>crc32</string>
+				<string>datafmt</string>
+				<string>doc</string>
+				<string>dwarf</string>
+				<string>ebnf</string>
+				<string>elf</string>
+				<string>eval</string>
+				<string>exec</string>
+				<string>expvar</string>
+				<string>flag</string>
+				<string>flate</string>
+				<string>fmt</string>
+				<string>git85</string>
+				<string>gob</string>
+				<string>gosym</string>
+				<string>gzip</string>
+				<string>hash</string>
+				<string>heap</string>
+				<string>hex</string>
+				<string>hmac</string>
+				<string>http</string>
+				<string>image</string>
+				<string>io</string>
+				<string>iotest</string>
+				<string>iterable</string>
+				<string>json</string>
+				<string>list</string>
+				<string>log</string>
+				<string>macho</string>
+				<string>malloc</string>
+				<string>math</string>
+				<string>md5</string>
+				<string>net</string>
+				<string>once</string>
+				<string>os</string>
+				<string>parser</string>
+				<string>patch</string>
+				<string>path</string>
+				<string>pem</string>
+				<string>png</string>
+				<string>printer</string>
+				<string>proc</string>
+				<string>quick</string>
+				<string>rand</string>
+				<string>rc4</string>
+				<string>reflect</string>
+				<string>regexp</string>
+				<string>ring</string>
+				<string>rpc</string>
+				<string>rsa</string>
+				<string>runtime</string>
+				<string>scanner</string>
+				<string>script</string>
+				<string>sha1</string>
+				<string>sort</string>
+				<string>stdio</string>
+				<string>strconv</string>
+				<string>strings</string>
+				<string>subtle</string>
+				<string>sync</string>
+				<string>syscall</string>
+				<string>tabwriter</string>
+				<string>tar</string>
+				<string>template</string>
+				<string>testing</string>
+				<string>time</string>
+				<string>tls</string>
+				<string>token</string>
+				<string>unicode</string>
+				<string>unsafe</string>
+				<string>utf8</string>
+				<string>vector</string>
+				<string>x509</string>
+				<string>xml</string>
+				<string>zlib</string>
+			</strings>
+		</scope>
+		<scope name="go.identifier.method"> <!-- technically there are no methods in Go, but this will work -->
+			<expression>(\.)([A-Za-zÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_]*)(?=\()\b</expression>
+			<capture number="1" name="go.punctuation.delimiter.period" />
+			<capture number="2" name="go.identifier.function" />
+		</scope>
+		<scope name="go.identifier.function">
+			<expression>\b(?&lt;!\.)([A-Za-zÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_]*)(?=\()\b</expression>
+		</scope>
+		<scope name="go.identifier">
+			<expression>\b[A-Za-zÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_]*\b</expression>
+		</scope>
+	</collection>
+
+	<!-- Syntax -->
+	<collection name="syntax">
+		<scope name="go.bracket.block.start">
+			<symbol type="block">
+				<context behavior="start" />
+			</symbol>
+			<expression>\{</expression>
+		</scope>
+		<scope name="go.bracket.block.end">
+			<symbol type="block">
+				<context behavior="end" />
+			</symbol>
+			<expression>\}</expression>
+		</scope>
+		<scope name="go.bracket">
+			<expression>[\(\[\)\]]</expression>
+		</scope>
+		<scope name="go.operator">
+			<expression>(\+|\-|\*|/|%|\+\+|\-\-|:\=|\=|\=\=|!\=|\+\=|\-\=|\*\=|/\=|%\=|\&lt;|\&gt;|\&lt;\=|\&lt;\-|\&gt;=|\=\=\=|!\=\=|&amp;&amp;|\||\|\||!|\^|&amp;|\&lt;\&lt;|\&gt;\&gt;|~|\.\.\.)</expression>
+		</scope>
+	</collection>
+
+	<collection name="punctuation">
+		<include collection="json-punctuation" />
+
+		<scope name="go.punctuation.delimiter.period">
+			<expression>\.</expression>
+		</scope>
+		<scope name="go.punctuation.brace.round.open">
+			<expression>\(</expression>
+		</scope>
+		<scope name="go.punctuation.brace.round.close">
+			<expression>\)</expression>
+		</scope>
+		<scope>
+			<expression>(\()|(\)(?:;|(,))?)</expression>
+			<capture number="1" name="go.punctuation.brace.round.open"/>
+			<capture number="2" name="go.punctuation.brace.round.close"/>
+			<capture number="3" name="go.punctuation.delimiter.comma"/>
+		</scope>
+		<scope name="go.punctuation.questionmark">
+			<expression>\?</expression>
+		</scope>
+		<scope name="go.punctuation.statement.terminator">
+			<expression>\;</expression>
+		</scope>
+	</collection>
+
+	<collection name="json-punctuation">
+		<scope name="go.punctuation.delimiter.comma">
+			<expression>,</expression>
+		</scope>
+		<scope>
+			<expression>(\{)|(\}(?:;|(,))?)|(\[)|(\](?:;|(,))?)</expression>
+			<capture number="1" name="go.punctuation.brace.curly.open"/>
+			<capture number="2" name="go.punctuation.brace.curly.close"/>
+			<capture number="3" name="go.punctuation.delimiter.comma"/>
+			<capture number="4" name="go.punctuation.brace.square.open"/>
+			<capture number="5" name="go.punctuation.brace.square.close"/>
+			<capture number="6" name="go.punctuation.delimiter.comma"/>
+		</scope>
+		<scope name="go.punctuation.colon">
+			<expression>:</expression>
+		</scope>
+	</collection>
+	<!--Variables-->
+	<collection name="variables">
+		<!--Properties (quoted forms defined in strings collection)-->
+		<scope>
+			<symbol type="variable" scope="local" />
+			<expression>(([A-Za-zÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_][\w$]*)\s*(:))</expression>
+			<capture number="1" name="go.variable.property.x-assignment"/>
+			<capture number="2" name="go.variable.name"/>
+			<capture number="3" name="go.operator.assignment"/>
+		</scope>
+		<!--Variable assignment-->
+		<!-- We define special scopes for variable assignments to allow the itemizers to easily capture anonymous functions assigned to specific variables as a named function (since they are equivalent, and otherwise we end up with a lot of anonymous functions depending on coding style) -->
+		<!-- The var keyword is included to allow the itemizers to be drag and dropped with predictable results -->
+		<scope>
+			<symbol type="variable" scope="local" />
+			<expression>((?:(var)\s+)?([A-Za-zÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_][\w$]*)\s*(:?=))(?!=)</expression>
+			<capture number="1" name="go.variable.x-assignment"/>
+			<capture number="2" name="go.keyword.storage.type"/>
+			<capture number="3" name="go.variable.name"/>
+			<capture number="4" name="go.operator.assignment"/>
+		</scope>
+		<scope>
+			<expression>(([A-Za-zÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_][\w$.]+)\s*(:?=))(?!=)</expression>
+			<capture number="1" name="go.variable.x-assignment"/>
+			<capture number="2" name="go.accessor-path.name">
+				<subscopes>
+					<include collection="variables" />
+				</subscopes>
+			</capture>
+			<capture number="3" name="go.operator.assignment"/>
+		</scope>
+		<!--Function Invocation-->
+		<scope>
+			<expression>(\.)([A-Za-zÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_][\w$]*)\s*(\()</expression>
+			<capture number="1" name="punctuation.delimiter.period"/>
+			<capture number="2" name="go.variable.function.method"/>
+			<capture number="3" name="punctuation.brace.round.open"/>
+		</scope>
+		<scope>
+			<symbol type="variable" scope="local" />
+			<expression>([A-Za-zÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_][\w$]*)\s*(\()</expression>
+			<capture number="1" name="go.variable.function"/>
+			<capture number="2" name="punctuation.brace.round.open"/>
+		</scope>
+		<!-- Var keyword; included here instead of keywords collection so that it doesn't conflict with variable assignment definitions -->
+		<!-- (gwyneth 20200810) The same applies to the Const keyword as well, and needs the possibility of multiple declaration e.g. var (a int, b string) etc. -->
+		<scope name="go.keyword.storage.type">
+			<symbol type="keyword" />
+			<expression>\b[var|const]\b</expression>
+			<include syntax="self" collection="comments" />
+			<starts-with>
+				<expression>\(</expression>
+				<capture number="0" name="go.bracket" />
+			</starts-with>
+			<ends-with>
+				<expression>\)</expression>
+				<capture number="0" name="go.bracket" />
+			</ends-with>
+			<subscopes>
+				<cut-off>
+					<expression>(?=\b(?:func|if|else|while|for)\b)</expression>
+				</cut-off>
+				<include syntax="self" collection="comments" />
+				<scope name="go.separator">
+					<expression>,</expression>
+				</scope>
+				<scope name="go.variable">
+					<symbol type="argument" />
+					<expression>(?&lt;!\=)\b([A-Za-zÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_]*)\s+(\*?)([A-Za-zÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_]*)\b</expression>
+					<capture number="1" name="go.variable.name" />
+					<capture number="2" name="go.operator" />
+					<capture number="3" name="go.variable.types" />
+				</scope>
+				<!-- <include syntax="self" collection="values" /> Probably not allowed in Go -->
+				<include syntax="self" collection="syntax" />
+			</subscopes>
+		</scope>
+		<scope>
+			<expression>([A-Za-zÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_][\w$]*)</expression>
+			<capture number="0" name="variable"/>
+		</scope>
+	</collection>
+</collections>
+</syntax>

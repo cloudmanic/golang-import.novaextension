@@ -1,0 +1,47 @@
+{
+  "identifier": "cloudmanic.GoTools",
+  "name": "Go Tools",
+  "organization": "Cloudmanic Labs, LLC",
+  "description": "Run goimports on save or via a command. Syntax highlighting for Go.",
+  "version": "1.0.0",
+  "categories": ["commands"],
+
+  "main": "main.js",
+
+  "activationEvents": ["onLanguage:go"],
+
+  "entitlements": {
+    "process": true
+  },
+
+  "commands": {
+    "editor": [
+      {
+        "title": "Go Tools",
+        "command": "runGoImport",
+        "shortcut": "cmd-shift-b",
+        "filters": {
+          "syntaxes": ["go"]
+        }
+      }
+    ]
+  },
+
+  "config": [
+    {
+      "key": "cloudmanic.GoTools.formatOnSave",
+      "title": "Format and update imports on file save.",
+      "type": "boolean",
+      "default": true
+    }
+  ],
+
+  "configWorkspace": [
+    {
+      "key": "cloudmanic.GoTools.formatOnSave",
+      "title": "Format and update imports on file save.",
+      "type": "boolean",
+      "default": true
+    }
+  ]
+}
