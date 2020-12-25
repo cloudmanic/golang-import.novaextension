@@ -12,6 +12,10 @@ class Formatter {
   async getProcess(filePath) {
     const executablePath = nova.extension.path + "/Vendor/goimports";
 
+    // Make sure we can execute this binary.
+    var chmodProc = new Process("/bin/chmod", { args: ["755", executablePath] });
+    chmodProc.start();
+
     var options = [filePath];
 
     return new Process(executablePath, {
