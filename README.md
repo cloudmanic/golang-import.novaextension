@@ -6,4 +6,4 @@ A extension for the [Nova](https://nova.app) editor.
 
 ## Please Support
 
-Love this extension? Please show your support by tweeting nice things to [@spicermatthews](https://twitter.com/spicermatthews). If you have a feature request, or bug to report please submit a Github issue here.
+Love this extension? Please show your support by tweeting nice things to [@spicermatthews](https://twitter.com/spicermatthews). If you have a feature request, or bug to report please submit a [Github issue](https://github.com/cloudmanic/golang-import.novaextension/issues). Pull requests welcome.
