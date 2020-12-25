@@ -7,7 +7,12 @@ const Formatter = require("./Formatter");
 exports.activate = function () {
   const config = new Config();
   const formatter = new Formatter(config);
+  const executablePath = nova.extension.path + "/Vendor/goimports";
   console.info("Starting " + nova.extension.identifier);
+
+  // Make sure we can execute this binary.
+  var chmodProc = new Process("/bin/chmod", { args: ["755", executablePath] });
+  chmodProc.start();
 
   nova.workspace.onDidAddTextEditor((editor) => {
     // Only interested in Golang code.
