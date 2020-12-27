@@ -3,7 +3,7 @@
   "name": "Go Tools",
   "organization": "Cloudmanic Labs, LLC",
   "description": "Run goimports on save or via a command. Syntax highlighting for Go.",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "homepage": "https://spicermatthews.com",
   "repository": "https://github.com/cloudmanic/golang-import.novaextension",
   "bugs": "https://github.com/cloudmanic/golang-import.novaextension/issues",
